@@ -7,9 +7,21 @@ This repository contains the code and resources for benchmarking different machi
 ## Overview
 
 The project systematically compares three different modeling approaches:
-1.  **SVM (Support Vector Machine)**: A baseline model using k-mer features.
-2.  **CNN (Convolutional Neural Network)**: A deep learning model learning local sequence motifs.
-3.  **DNABERT2 (Transformer)**: A state-of-the-art foundation model for DNA sequences.
+
+### 1. SVM (Support Vector Machine)
+A baseline model using k-mer features.
+
+![SVM Workflow](reports/svm.drawio.png)
+
+### 2. CNN (Convolutional Neural Network)
+A deep learning model learning local sequence motifs.
+
+![CNN Workflow](reports/cnn.drawio.png)
+
+### 3. DNABERT2 (Transformer)
+A state-of-the-art foundation model for DNA sequences.
+
+![Transformer Workflow](reports/brt.drawio.png)
 
 ## Google Colab Setup & Instructions
 
@@ -26,6 +38,8 @@ My Drive/
             ├── refTSS_v4.1_human_coordinate.hg38.bed.txt
             └── hg38.fa
 ```
+
+![Directory Structure](reports/dirs.png)
 
 ### 2. Data Preparation
 You need to download the source data and place it in the `data/hg38` folder created above.
@@ -60,6 +74,24 @@ The `hg38_data.ipynb` notebook will generate the following intermediate files in
 *   `epd_collapsed_refTSS.csv`
 *   `epd_final_10k_refTSS.csv`
 *   `human_promoter_vs_nonpromoter_10k_400bp.csv` (Used by all model notebooks)
+
+## Performance Benchmark
+
+The following table summarizes the performance of the three models on the test set:
+
+| Model | Accuracy | F1 Score | AUROC | MCC |
+| :--- | :--- | :--- | :--- | :--- |
+| **SVM_kmer** | 0.713 | 0.713 | 0.792 | 0.425 |
+| **CNN** | 0.758 | 0.733 | 0.846 | 0.525 |
+| **DNABERT2** | **0.817** | **0.806** | **0.896** | **0.637** |
+
+### Visual Comparisons
+
+#### Performance Metrics Comparison
+![Performance Metrics](reports/performance_comparison.png)
+
+#### ROC Curves
+![ROC Curves](reports/roc_curves.png)
 
 ## License
 MIT License

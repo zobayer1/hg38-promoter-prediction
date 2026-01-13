@@ -1,0 +1,384 @@
+\documentclass[10pt, a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{abstract}
+\usepackage{graphicx}
+
+\usepackage{abstract}
+\usepackage[backend=biber, style=numeric]{biblatex}
+
+\usepackage{hyperref}
+
+% Configuration
+\onehalfspacing
+\setlength{\parskip}{6pt}      
+\setlength{\parindent}{15pt}   
+\setlength{\absleftindent}{50pt}
+\setlength{\absrightindent}{50pt}
+
+\hypersetup{
+    colorlinks=true,      
+    linkcolor=blue,       
+    citecolor=blue,       
+    urlcolor=blue,        
+    pdftitle={From k-mers to Transformers},
+    pdfauthor={MD ZOBAYER HASAN}
+}
+
+\addbibresource{references.bib}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \includegraphics[width=0.25\textwidth]{bracu-logo.png}
+    
+    {\large Department of Computer Science and Engineering \\ BRAC University \par}
+    
+    \vspace*{1cm}
+
+    {\Huge\bfseries From k-mers to Transformers:\\A Systematic Benchmark of Model Architectures for Promoter Prediction \par}
+    
+    \vspace{1.5cm}
+    {\Large\textbf{Md. Zobayer Hasan} \par}
+    {\large Student ID: 1000055820 \par}
+    
+    \vfill
+
+    {\large A Term Project Report \par}
+    \vspace{0.4cm}
+    {\normalsize submitted in partial fulfillment of the requirements for the course \par}
+    \vspace{0.4cm}
+    {\large \textbf{CSE763: Advanced Bioinformatics} \par}
+
+    \vfill
+
+    {\large \textit{Submitted to:} \par}
+    \vspace{0.2cm}
+    {\Large \textbf{Prof. Dr. Swakkhar Shatabda} \par}
+    \vspace{0.8cm}
+    {\large January 2026 \par}
+\end{titlepage}
+
+\begin{abstract}
+Accurate identification of promoter regions is a fundamental problem in genome annotation and regulatory genomics, particularly in eukaryotic systems where architectures are diverse. While transformer-based models show promise in genomic analysis, systematic comparisons with classical and deep learning approaches on well-controlled benchmarks remain limited. In this study, we present a comprehensive analysis of promoter prediction models spanning three generations: a k-mer–based support vector machine (SVM), a convolutional neural network (CNN), and a pretrained transformer, DNABERT-2. Using a curated human promoter dataset from refTSS annotations on the hg38 genome, we evaluate each model under consistent protocols. Our results demonstrate clear performance progression: while CNNs outperform k-mer approaches, DNABERT-2 achieves the strongest overall performance (AUROC: 0.896, MCC: 0.641). These findings provide practical guidance on the trade-offs between model complexity, computational resources, and predictive accuracy for genomic research.
+
+\vspace{0.3cm}
+\noindent \textbf{Keywords:} Human Genome, RefTSS Annotations, HG38 Genome, Promoter Prediction, Transformer Models, DNABERT-2, Comparative Benchmarking, Regulatory Genomics.
+
+\vspace{0.3cm}
+\noindent \textbf{Source Code:} \url{https://github.com/zobayer1/hg38-promoter-prediction}
+
+\end{abstract}
+
+\section{Introduction}
+
+\subsection{Background}
+Promoters are regulatory DNA elements that control transcription initiation and play a central role in gene expression and cellular function. In eukaryotic genomes, promoter regions exhibit considerable structural and functional diversity \cite{Brazda2021Evolution}, lacking a universal consensus sequence and often containing multiple transcription start sites (TSSs) associated with alternative transcriptional regulation. This complexity makes computational promoter identification a long-standing and challenging problem in genome annotation and regulatory genomics.
+
+Large-scale curated databases, such as the Eukaryotic Promoter Database (EPDnew), have enabled systematic study of experimentally validated promoters across multiple species by providing high-confidence TSS annotations \cite{Dreos2017EPD}. In contrast to prokaryotic promoters, which often exhibit well-defined consensus motifs, eukaryotic promoters frequently rely on combinations of sequence features, local nucleotide composition, and contextual dependencies extending beyond short motif patterns. As a result, accurate promoter prediction remains difficult when relying solely on sequence information.
+
+Despite the increasing availability of epigenomic and transcriptomic data, sequence-based promoter prediction remains an important task due to its applicability to newly sequenced genomes and independence from cell-type–specific experimental assays. Consequently, the development and evaluation of computational models capable of capturing promoter-associated sequence patterns remain active areas of research.
+
+\subsection{Computational Promoter Prediction}
+Early computational approaches to promoter prediction relied on handcrafted features such as k-mer frequencies, DNA structural properties, and position weight matrices, often combined with classical machine learning classifiers, including support vector machines and decision trees \cite{Stormo2000DNARecognition,Abeel2010kmer}. While these methods demonstrated moderate success, their reliance on fixed-length local features limited their ability to model higher-order dependencies and contextual relationships within promoter regions.
+
+Subsequent advances in deep learning introduced convolutional neural networks (CNNs) as a powerful alternative for modeling genomic sequences. CNN-based models learn motif-like patterns directly from raw DNA sequences and can capture interactions between motifs through hierarchical feature extraction \cite{Alipanahi2015DeepSEA,Zeng2016CNNGenomics,Koo2018DeepLearningRegulation}. These approaches have been successfully applied to a range of regulatory genomics tasks, including promoter prediction, often outperforming classical k-mer–based models \cite{Kumar2016PromCNN}.
+
+More recently, transformer-based architectures have emerged as a dominant paradigm in genomic sequence modeling. Inspired by advances in natural language processing, models such as DNABERT leverage masked language modeling to learn contextual representations of DNA sequences using k-mer tokenization \cite{Ji2021DNABERT}. DNABERT-2 further extends this approach by improving training efficiency and supporting multi-species genomic modeling, establishing transformer-based foundation models as state-of-the-art tools for sequence-based genomic prediction tasks \cite{Zhou2023DNABERT2}. Comprehensive surveys of genomic language models highlight their growing impact across diverse genomic applications \cite{Consens2025GeneLLMs}.
+
+\subsection{Motivation and Scope}
+Although a wide range of computational models for promoter prediction has been proposed, direct and controlled comparisons across different generations of machine learning architectures remain limited. In particular, many studies focus on optimizing a single modeling approach or incorporating additional data modalities, making it difficult to isolate the impact of architectural choices on predictive performance. Recent large-scale assessments have emphasized the need for standardized benchmarks and fair evaluation protocols to meaningfully compare promoter prediction methods \cite{Mahmud2022Assessment,Martell2022Benchmark}. Alternative representations, including image-based encoding of DNA sequences, have also been explored to capture higher-order patterns \cite{Wang2018ImageBased}.
+
+The primary motivation of this study is to provide a systematic and controlled comparison of representative sequence-based promoter prediction models spanning classical machine learning, deep learning, and transformer-based approaches. Specifically, we benchmark a k-mer–based support vector machine, a convolutional neural network operating on one-hot encoded DNA sequences, and a pretrained transformer model (DNABERT-2) fine-tuned for promoter classification. All models are evaluated on a curated human promoter dataset derived from refTSS annotations on the hg38 reference genome, paired with carefully matched non-promoter sequences, and assessed using a consistent set of performance metrics.
+
+Rather than exhaustively optimizing each model, this work focuses on representative architectures and standard training configurations to highlight performance trends and computational trade-offs as model complexity increases. While recent studies have explored graph-based representations and graph neural networks for promoter prediction \cite{Cui2023PromGER}, such approaches typically require alternative problem formulations and additional assumptions. These methods are therefore discussed as promising future directions but are beyond the scope of the present sequence-only benchmarking study.
+
+\section{Related Work}
+
+\subsection{Promoter Databases and Benchmarking Resources}
+The development of reliable promoter prediction models has been closely tied to the availability of high-quality, experimentally validated promoter annotations. Early computational studies were often limited by small or heterogeneous datasets \cite{Abeel2009GoldStandard}, leading to the avoidance of standardized benchmarks and making cross-study comparisons difficult. The Eukaryotic Promoter Database (EPDnew) addresses these challenges by providing curated transcription start site (TSS) annotations derived from high-throughput experimental evidence across multiple species \cite{Dreos2017EPD}. Such resources have enabled more structured evaluation of promoter prediction methods under controlled conditions \cite{Martell2022Benchmark}.
+
+In parallel, databases such as RegulonDB have played a central role in advancing promoter prediction in prokaryotic systems by integrating classical and high-throughput regulatory knowledge \cite{SantosZavaleta2019RegulonDB}. While prokaryotic promoter prediction has benefited from well-defined consensus motifs, eukaryotic promoters remain substantially more diverse, necessitating more expressive computational models.
+
+Recent large-scale assessments have emphasized the importance of standardized benchmarking protocols for promoter prediction tools. Mahmud et al.~\cite{Mahmud2022Assessment} conducted a comprehensive evaluation of over one hundred promoter prediction methods across both prokaryotic and eukaryotic datasets, highlighting significant variability in performance and underscoring the need for fair, dataset-controlled comparisons. These findings motivate the use of curated datasets and consistent evaluation metrics when comparing different modeling paradigms.
+
+\subsection{Classical and Deep Learning Approaches for Promoter Prediction}
+Early computational approaches to promoter prediction relied heavily on handcrafted sequence features, such as k-mer frequencies, position weight matrices, and DNA structural properties \cite{Stormo2000DNARecognition,Abeel2010kmer}. These features were typically combined with classical machine learning classifiers, including support vector machines and decision trees, to distinguish promoter regions from background genomic sequences. While such models offered interpretability and modest predictive performance, their reliance on fixed-length local features limited their ability to capture complex, higher-order dependencies within promoter regions \cite{Gan2012Structural}.
+
+The introduction of deep learning marked a significant shift in promoter prediction methodology. Convolutional neural networks (CNNs) enabled models to learn motif-like patterns directly from raw DNA sequences, eliminating the need for manual feature engineering. CNN-based architectures have been successfully applied to a variety of regulatory genomics tasks, including promoter prediction, transcription factor binding site identification, and chromatin accessibility modeling \cite{Alipanahi2015DeepSEA,Zeng2016CNNGenomics}. Subsequent studies demonstrated that CNNs could capture both individual motifs and combinatorial interactions between motifs through hierarchical feature extraction \cite{Koo2018DeepLearningRegulation}.
+
+Several CNN-based promoter prediction models showed improved performance over classical approaches \cite{Bhandari2021Comparison}, particularly in eukaryotic genomes where promoter structure is heterogeneous \cite{Kumar2016PromCNN}. However, inherently, CNNs remain local models, with receptive fields limited by kernel sizes and network depth. As a result, modeling long-range dependencies and broader contextual relationships within promoter regions remains challenging.
+
+\subsection{Transformer-Based and Emerging Models}
+Transformer architectures have recently emerged as a powerful alternative to convolutional models for genomic sequence analysis. Inspired by advances in natural language processing, transformer-based models employ self-attention mechanisms to capture long-range dependencies and contextual relationships across entire sequences. DNABERT introduced the concept of treating DNA as a language by pretraining bidirectional transformer models on k-mer tokenized genomic sequences using masked language modeling objectives \cite{Ji2021DNABERT}. This approach demonstrated strong performance across a range of downstream genomic tasks, including promoter prediction.
+
+DNABERT-2 further advanced this paradigm by improving training efficiency and scalability, enabling the development of foundation models pretrained on large multi-species genomic corpora \cite{Zhou2023DNABERT2}. Comprehensive surveys of genomic language models have highlighted their growing role as general-purpose sequence encoders capable of transferring learned representations across diverse genomic prediction tasks \cite{Consens2025GeneLLMs}. Recent transformer-based promoter predictors have also explored ensemble and multi-scale architectures built upon pretrained BERT encoders, reporting improved performance over conventional deep learning baselines for promoter identification and promoter strength prediction \cite{Li2024msBERTPromoter,Amjad2024DeepIdentifier}. Despite their strong predictive performance, transformer-based models typically incur substantially higher computational costs compared to classical and CNN-based approaches, motivating careful evaluation of their performance--cost trade-offs.
+
+Beyond transformers, recent work has explored alternative modeling paradigms, including graph-based representations and generative models. Graph embedding approaches, such as PromGER, model promoter prediction as a graph learning problem by encoding relationships between sequence-derived features and applying ensemble learning techniques \cite{Cui2023PromGER}. While these methods have shown promising results, they often require additional assumptions regarding graph construction and differ fundamentally from sequence-only classification frameworks. Benchmarking studies in bacterial systems further illustrate that promoter prediction strategies and challenges vary substantially across domains, reflecting the relative simplicity of prokaryotic promoter architectures compared to the complex regulatory landscapes of eukaryotic genomes \cite{Leung2014PromoterPrediction,Fodor2020Bacterial}. Sequence-context analyses in plant genomes similarly emphasize the organism-specific nature of promoter organization, and transcription start site regulation \cite{Hiratsuka2022Arabidopsis}. In parallel, deep generative models have been applied to the design of novel promoter sequences, shifting focus from prediction to sequence generation \cite{Shen2025PromoterDesign}. Collectively, these emerging directions highlight the expanding landscape of computational promoter modeling but remain beyond the scope of the present sequence-only benchmarking study.
+
+\section{Data Preparation and Benchmark Construction}
+
+\subsection{Genome and Annotation Sources}
+All experiments were conducted using the human reference genome hg38. Promoter annotations were derived from the refTSS v4.1 dataset, which provides high-confidence transcription start site (TSS) coordinates supported by CAGE experiments and integrated within the EPDnew framework \cite{Dreos2017EPD}. Only standard autosomes (chr1--chr22) and chromosome chrX were retained to ensure consistency with the reference genome and to avoid incomplete or alternative contigs.
+
+\subsection{Promoter Definition and Sequence Extraction}
+Each promoter was defined as a fixed-length sequence centered on the annotated TSS. Specifically, a 400~bp window spanning 200~bp upstream and 200~bp downstream of the TSS was extracted in a strand-aware manner. This window size was selected to capture core promoter elements and proximal regulatory context while remaining compatible with downstream modeling constraints. Sequences extending beyond chromosome boundaries or containing ambiguous nucleotides were excluded.
+
+\subsection{Redundancy Reduction via TSS Clustering}
+The refTSS annotation contains clusters of closely spaced TSSs corresponding to alternative transcription initiation events. To reduce redundancy and prevent information leakage between highly similar promoter sequences, nearby TSSs were clustered using a strand-specific approach (Table:~\ref{tab:clustering_stats}). TSSs located within a 50~bp window on the same chromosome and strand were grouped, and a single representative TSS was retained from each cluster. This procedure resulted in a non-redundant promoter set while preserving genome-wide coverage.
+
+\begin{table}[h]
+\centering
+\caption{Effect of redundancy reduction and subsampling}
+\label{tab:clustering_stats}
+\begin{tabular}{lc}
+\hline
+Processing Stage & Number of TSSs \\
+\hline
+Raw refTSS annotations & 241{,}050 \\
+After chromosome filtering & 239{,}118 \\
+After strand-specific clustering & 186{,}356 \\
+Final subsampled promoters & 9{,}997 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Negative Sample Construction}
+Negative (non-promoter) sequences were generated by randomly sampling genomic regions that did not overlap any annotated promoter regions. To avoid trivial discrimination based on nucleotide composition, negative samples were matched to promoter sequences in both length (400~bp) and GC content distribution. This GC-matching strategy ensures that models must rely on higher-order sequence patterns rather than simple compositional biases when distinguishing promoters from background sequences.
+
+\subsection{Final Dataset Composition}
+Following filtering, clustering, and quality control, a balanced dataset was constructed by pairing promoter and non-promoter sequences in equal numbers. The final benchmark dataset consisted of 9,997 promoter sequences and 9,997 matched non-promoter sequences. Summary statistics of the dataset, including sequence length and GC-content distributions, are reported in Table~\ref{tab:dataset_stats}. All preprocessing steps were implemented in Python, and full implementation details are provided in Appendix~A.
+
+\begin{table}[h]
+\centering
+\caption{Summary of the promoter prediction benchmark dataset.}
+\label{tab:dataset_stats}
+\begin{tabular}{lccc}
+\hline
+Category & Count & Sequence Length (bp) & Mean GC Content \\
+\hline
+Promoters & 9,997 & 400 & 0.52 \\
+Non-promoters & 9,997 & 400 & 0.49 \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Methodological Design}
+This section describes the modeling approaches evaluated in this study, spanning classical machine learning, deep learning, and transformer-based architectures. All models were trained and evaluated under a consistent experimental protocol to enable fair comparison. Implementation details are summarized here, with full code provided in Appendix~A.
+
+\subsection{Problem Formulation and Evaluation Protocol}
+Promoter prediction was formulated as a binary classification task, where each input is a fixed-length DNA sequence, and the output is the probability that the sequence represents a promoter region. All sequences were 400~bp in length and derived as described in Section~4. Model parameters are noted in Table~\ref{tab:model_config}.
+
+Model performance was evaluated using a stratified train--test split, with 80\% of the data used for training and 20\% held out for testing. For the classical baseline, five-fold cross-validation was additionally employed to estimate performance stability. Evaluation metrics included accuracy, F1-score, area under the receiver operating characteristic curve (AUROC), and Matthews correlation coefficient (MCC), with MCC given particular emphasis due to its robustness for balanced binary classification tasks.
+
+\subsection{Classical Baseline: SVM with k-mer Features}
+As a classical machine learning baseline, a linear support vector machine (SVM) was trained using k-mer frequency features (Figure~\ref{fig:svm_arch}). Each DNA sequence was represented as a vector of overlapping 6-mer counts, resulting in a 4$^6$-dimensional feature space. The choice of $k=6$ reflects a balance between capturing transcription factor binding site–scale motifs and maintaining a tractable feature dimensionality.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{svm.drawio.png}
+\caption{Classical promoter prediction pipeline of a linear SVM classification.}
+\label{fig:svm_arch}
+\end{figure}
+
+A linear kernel was used to preserve interpretability and computational efficiency. Model training and evaluation were performed using five-fold cross-validation on the full dataset. In addition to predictive performance, the learned feature weights were analyzed to identify k-mers most strongly associated with promoter and non-promoter classes. This analysis provides qualitative insight into sequence patterns captured by the classical model.
+
+\subsection{Deep Learning Baseline: Convolutional Neural Network}
+A one-dimensional convolutional neural network (CNN) was implemented as a deep learning baseline operating directly on one-hot encoded DNA sequences (Figure~\ref{fig:cnn_arch}). Each nucleotide sequence was encoded as a $400 \times 4$ binary matrix corresponding to the four DNA bases.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{cnn.drawio.png}
+\caption{One-dimensional convolutional neural network architecture for promoter prediction.}
+\label{fig:cnn_arch}
+\end{figure}
+
+The CNN architecture consisted of two convolutional layers followed by pooling operations to capture hierarchical sequence features. The first convolutional layer employed wider kernels to detect motif-scale patterns, while the second layer refined and combined these features. Global max pooling was applied to enforce positional invariance, reflecting the flexible positioning of regulatory motifs within promoter regions. Fully connected layers were used for final classification, with dropout and batch normalization applied to reduce overfitting and stabilize training.
+
+Model training was performed using the Adam optimizer with early stopping based on validation loss. Training was conducted on a GPU-enabled environment to accelerate convergence. This architecture represents a standard and widely used design for regulatory genomics tasks, serving as a strong deep learning baseline for comparison with transformer-based models.
+
+\subsection{Transformer-Based Model: DNABERT-2}
+To evaluate transformer-based sequence modeling, a pretrained DNABERT-2 model was fine-tuned for promoter classification. DNABERT-2 treats DNA sequences as a language by tokenizing them into overlapping fixed-length k-mers defined by its pretrained tokenizer, enabling contextual representation learning via self-attention mechanisms (Figure~\ref{fig:brt_arch}). The k-mer size is implicitly determined by the tokenizer and consistent with the model’s pretraining configuration.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{brt.drawio.png}
+\caption{Transformer-based promoter prediction pipeline using a pretrained DNABERT-2 encoder.}
+\label{fig:brt_arch}
+\end{figure}
+
+The pretrained transformer encoder was augmented with a classification head and fine-tuned using supervised learning on the promoter prediction task. Due to hardware constraints in the Google Colab environment, a FlashAttention-free variant of DNABERT-2 was used, with standard attention mechanisms and mixed-precision training enabled to reduce memory usage. Gradient accumulation was used to maintain an effective batch size comparable to that of the CNN baseline.
+
+Fine-tuning was conducted for a limited number of epochs to balance performance and computational cost, without exhaustive hyperparameter optimization. This setup reflects a realistic application of transformer-based genomic foundation models under practical resource constraints.
+
+\subsection{Computational Environment}
+All experiments were conducted using Google Colab. The SVM baseline was trained on a CPU, while the CNN and transformer-based models were trained on GPUs. Training time and hardware utilization were recorded for each model to facilitate a comparative analysis of computational cost alongside predictive performance.
+
+\begin{table}[h]
+\centering
+\caption{Summary of model configurations and training settings.}
+\label{tab:model_config}
+\begin{tabular}{lccc}
+\hline
+Model & Input Representation & Key Parameters & Training Mode \\
+\hline
+SVM & 6-mer frequencies & Linear kernel & CPU \\
+CNN & One-hot (400×4) & Conv(15,7), Dropout 0.5 & GPU \\
+DNABERT-2 & k-mer tokens & Pretrained transformer & GPU \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Experimental Results and Analysis}
+
+\subsection{Evaluation Metrics}
+Model performance was evaluated using four complementary metrics:
+
+\begin{enumerate}
+  \item \textbf{Accuracy} provides an overall measure of classification correctness but may obscure asymmetries in error rates.
+  \item \textbf{F1-score} balances precision and recall, making it more informative for biological sequence classification tasks.
+  \item \textbf{AUROC} (area under the receiver operating characteristic curve) evaluates the model’s ability to rank promoter and non-promoter sequences across decision thresholds, independent of class labels.
+  \item \textbf{MCC} (Matthews correlation coefficient) was emphasized as the primary metric due to its robustness, balanced treatment of true and false predictions, and widespread recommendation for genomic classification tasks.
+\end{enumerate}
+
+\subsection{Overall Model Performance}
+Table~\ref{tab:performance_results} summarizes the predictive performance of all evaluated models on the held-out test set. Among the three approaches, the transformer-based DNABERT-2 model achieved the highest performance across all metrics, followed by the convolutional neural network, with the k-mer–based SVM serving as a strong classical baseline.
+
+\begin{table}[h]
+\centering
+\caption{Performance comparison of promoter prediction models on the test set.}
+\label{tab:performance_results}
+\begin{tabular}{lcccc}
+\hline
+Model & Accuracy & F1 & AUROC & MCC \\
+\hline
+SVM (k-mer) & 0.7126781695 & 0.7125344008 & 0.7915155078 & 0.4253562845 \\
+CNN & 0.7579394849 & 0.7334801762 & 0.8456988494 & 0.5247231136 \\
+DNABERT-2 & 0.8166332665 & 0.8061440678 & 0.895753781 & 0.6369183864 \\
+\hline
+\end{tabular}
+\end{table}
+
+The SVM achieved moderate accuracy and AUROC, indicating that k-mer frequency features capture relevant promoter-associated patterns (Figure~\ref{fig:perf_comp}. However, its lower MCC reflects limitations in modeling higher-order sequence dependencies. The CNN substantially improved performance, demonstrating the benefit of learning hierarchical motif representations directly from sequence data. DNABERT-2 further outperformed both baselines, suggesting that contextual sequence representations learned through large-scale pretraining provide additional discriminative power for promoter prediction.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{performance_comparison.png}
+\caption{Performance comparison of promoter prediction models on the held-out test set.}
+\label{fig:perf_comp}
+\end{figure}
+
+\subsection{Receiver Operating Characteristic Analysis}
+Figure~\ref{fig:roc_curves} shows the ROC curves for all models. The SVM exhibits a relatively shallow curve, consistent with its limited representational capacity. The CNN demonstrates improved separation between promoter and non-promoter classes, while DNABERT-2 achieves the highest true positive rates across most thresholds, reflected in its superior AUROC.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{roc_curves.png}
+\caption{Receiver operating characteristic (ROC) curves for promoter prediction models.}
+\label{fig:roc_curves}
+\end{figure}
+
+\subsection{Computational Cost Considerations}
+In addition to predictive performance, computational efficiency was assessed by recording training time and hardware utilization. The SVM baseline was trained entirely on CPU and completed within minutes. The CNN required GPU acceleration but converged rapidly due to its relatively shallow architecture. In contrast, DNABERT-2 incurred substantially higher computational cost during fine-tuning, reflecting the overhead of transformer-based architectures. These results (Table~\ref{tab:consumption_results}) highlight a clear trade-off between predictive performance and computational resource requirements.
+
+\begin{table}[h]
+\centering
+\caption{Approximate computational cost of evaluated models. (gccu* = Google Colab Compute Units)}
+\label{tab:consumption_results}
+\begin{tabular}{lcccc}
+\hline
+Model & Hardware & Training Time & Validation Time & Inference Cost (gccu*) \\
+\hline
+SVM & CPU & Low (~5s) & Moderate (~121s) & Low (0.9) \\
+CNN & GPU (A-100) & Moderate (19s) & Low (1s) & Negligible (0.06) \\
+DNABERT-2 & GPU (A-100) & High (382s) & Low (17s) & Moderate (1.69) \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Discussion and Future Work}
+
+\subsection{Discussion of Results}
+This study presents a systematic comparison of promoter prediction models spanning classical machine learning, deep learning, and transformer-based architectures on a human genomic dataset. The observed performance trends reflect a clear progression in representational capacity and predictive power across model families. The k-mer–based SVM baseline demonstrated that local sequence composition alone captures meaningful promoter-associated patterns, but its limited ability to model positional context and long-range dependencies constrained overall performance.
+
+The convolutional neural network substantially improved upon the classical baseline, underscoring the importance of learning hierarchical, spatially localized features directly from raw sequence data. By modeling motif-level patterns and their combinations, the CNN achieved a favorable balance between predictive accuracy and computational efficiency. In contrast, the transformer-based DNABERT-2 model achieved the strongest performance across all evaluation metrics, suggesting that contextual representations learned through large-scale pretraining enable more comprehensive modeling of regulatory sequence features.
+
+Despite its superior accuracy, DNABERT-2 incurred a significantly higher computational cost than the CNN and SVM baselines. This trade-off underscores an important practical consideration: while transformer-based models offer state-of-the-art performance, their deployment may be constrained by hardware availability and training time, particularly in resource-limited research settings. Consequently, CNN-based approaches remain a competitive alternative when computational efficiency is a priority.
+
+\subsection{Limitations}
+Several limitations of the present study should be acknowledged. First, an evaluation was conducted on a single eukaryotic organism using one promoter annotation source. While this choice enabled controlled experimentation, promoter architectures vary substantially across species and annotation databases. Second, model hyperparameters were selected based on standard practices rather than exhaustive optimization, reflecting a pragmatic benchmarking objective rather than a pursuit of maximal performance. Third, interpretability analysis was limited to the classical SVM model, as direct feature attribution in deep learning and transformer models remains an active area of research.
+
+\subsection{Future Work}
+Several promising directions emerge for future investigation. Extending the benchmarking framework to additional eukaryotic species or alternative promoter annotations would enable assessment of cross-dataset generalizability. Incorporating more sophisticated interpretability techniques, such as saliency maps or attention-based attribution methods, could provide deeper biological insight into model predictions.
+
+Recent advances beyond transformer architectures also warrant exploration. Graph-based promoter prediction models, such as those employing graph embeddings and ensemble learning, represent an emerging paradigm that captures relational structure beyond linear sequence representations. Evaluating such approaches within the same experimental framework would further clarify their advantages and limitations relative to sequence-only models. Finally, integrating promoter prediction with downstream tasks such as promoter strength estimation or de novo promoter design presents an exciting opportunity to bridge predictive modeling with functional genomic engineering.
+
+\section{Conclusion}
+This project presented a comparative evaluation of promoter prediction models spanning classical machine learning, deep learning, and transformer-based architectures on human genomic data. The results demonstrate a clear progression in predictive performance from k-mer–based SVMs to convolutional neural networks and finally to the pretrained DNABERT-2 transformer, highlighting the increasing representational power of modern sequence modeling approaches. At the same time, the observed performance gains were accompanied by substantial increases in computational cost, underscoring the need to balance accuracy with practical resource constraints. Overall, this study provides a reproducible benchmarking framework and empirical insight into model selection for promoter prediction tasks, contributing to informed methodological choices in computational genomics.
+
+\printbibliography
+
+\appendix
+
+\section{Implementation and Reproducibility Details}
+
+\subsection{Data Processing Pipeline}
+All data preprocessing steps were implemented in Python using a Google Colab environment. This includes genome loading, promoter sequence extraction, redundancy reduction, and negative sample generation. The full preprocessing pipeline is provided as a Jupyter notebook to ensure reproducibility.
+
+\begin{enumerate}
+    \item Data loading:\\
+    \url{https://colab.research.google.com/drive/1sHYs-AjLOBdJD0hyi8-kh2VHqOvfVcQ9}
+    \item SVM pipeline:\\
+    \url{https://colab.research.google.com/drive/1Yp49DF5cbc1LRbOsB1ABaEScuzy5KwOE}
+    \item 1D-CNN pipeline:\\
+    \url{https://colab.research.google.com/drive/1Uy7NN7UpJwU3j_y1MVapycv32BopVtao}
+    \item DNABERT-2 pipeline:\\
+    \url{https://colab.research.google.com/drive/1wzbQCOGK1ru6huhN8ZvIfttNzUfp5hWU}
+    \item Results:\\
+    \url{https://colab.research.google.com/drive/1VcQfubhsRSy5KfMnh9_eDlZU1HXLpNKh}
+\end{enumerate}
+
+\subsubsection{Directory Structure}
+To ensure reproducibility, Figure~\ref{fig:directories} shows the directory structure used in the Google Colab environment.
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{dirs.png}
+\caption{Directory structure in Google Drive for Colab environment.}
+\label{fig:directories}
+\end{figure}
+
+\noindent Link to Google Drive containing all data and generated files\\
+\url{https://drive.google.com/drive/folders/1CYuHDdhjk9VmZrn8aRQpt9w3JI-GuPTo}
+
+\subsection{Data Sources and Access}
+The human reference genome (hg38) was obtained from the UCSC Genome Browser repository:
+
+\url{https://hgdownload.soe.ucsc.edu/goldenPath/hg38/}
+
+Promoter annotations were derived from the refTSS v4.1 dataset integrated within the EPDnew framework:
+
+\url{https://refTSS.org}
+
+All datasets were accessed between December 2025 and January 2026.
+
+\subsection{Model Configurations}
+Hyperparameters and architectural configurations for all evaluated models are summarized below.
+
+\begin{itemize}
+  \item \textbf{SVM}: Linear kernel, k-mer size $k=6$, five-fold cross-validation.
+  \item \textbf{CNN}: Two convolutional layers with kernel sizes 15 and 7, ReLU activation, batch normalization, dropout rate 0.5, Adam optimizer.
+  \item \textbf{DNABERT-2}: Pretrained transformer fine-tuned for binary classification using mixed-precision training and gradient accumulation.
+\end{itemize}
+
+\subsubsection{Random Seeding}
+Random seeds were fixed for data splitting and model initialization to ensure reproducibility.
+
+\subsection{Code Availability}
+All scripts and notebooks used to produce the results in this study are publicly available at \url{https://github.com/zobayer1/hg38-promoter-prediction} under \textbf{MIT License}.
+
+\end{document}
